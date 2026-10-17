@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Expression Detector | Deteksi Ekspresi Wajah Real-Time</title>
+    
+    <!-- Meta tags SEO & PWA friendly -->
+    <meta name="description" content="Aplikasi web modern untuk mendeteksi ekspresi wajah (Senang, Sedih, Netral) secara real-time menggunakan AI dan Google Teachable Machine.">
+    <meta name="theme-color" content="#3b82f6">
+
+    <!-- Google Fonts: Inter & Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- TensorFlow.js & Teachable Machine Image Library via Official CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"></script>
+</head>
+<body>
+
+    <!-- Ambient Background Blobs -->
+    <div class="blob-container" aria-hidden="true">
+        <div class="blob blob-blue"></div>
+        <div class="blob blob-purple"></div>
+        <div class="blob blob-light-blue"></div>
+    </div>
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="navbar" id="header">
+        <div class="nav-container">
+            <a href="#hero" class="brand">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                        <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                        <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                    </svg>
+                    <span class="ai-sparkle">✨</span>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">Face Expression AI</span>
+                    <span class="brand-subtitle">Teachable Machine</span>
+                </div>
+            </a>
+
+            <nav class="nav-menu" id="navMenu">
+                <a href="#hero" class="nav-link active">Beranda</a>
+                <a href="#detection" class="nav-link">Deteksi</a>
+                <a href="#about" class="nav-link">Tentang</a>
+            </nav>
+
+            <div class="nav-actions">
+                <button class="btn-config" id="btnOpenConfig" title="Ganti URL Model Teachable Machine">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Pengaturan Model</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- HERO SECTION -->
+        <section class="hero-section" id="hero">
+            <div class="container hero-content">
+                <div class="hero-badge">
+                    <span class="badge-dot"></span>
+                    <span>Powered by TensorFlow.js & Teachable Machine</span>
+                </div>
+                <h1 class="hero-title">
+                    Face Expression <span class="gradient-text">Detector</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Deteksi ekspresi wajah secara real-time menggunakan kecerdasan buatan langsung melalui webcam browser Anda. Kenali ekspresi <strong>Senang</strong>, <strong>Sedih</strong>, dan <strong>Netral</strong> dengan akurasi tinggi dan privasi penuh.
+                </p>
+
+                <!-- Feature Highlights Badges -->
+                <div class="hero-highlights">
+                    <div class="highlight-pill">
+                        <span class="pill-icon">⚡</span>
+                        <span>Inferensi Real-Time 60 FPS</span>
+                    </div>
+                    <div class="highlight-pill">
+                        <span class="pill-icon">🛡️</span>
+                        <span>100% Pemrosesan Lokal di Browser</span>
+                    </div>
+                    <div class="highlight-pill">
+                        <span class="pill-icon">🎯</span>
+                        <span>Senang, Sedih & Netral</span>
+                    </div>
+                </div>
+
+                <div class="hero-cta">
+                    <a href="#detection" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                        <span>Mulai Deteksi Sekarang</span>
+                    </a>
+                    <a href="#about" class="btn btn-secondary">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <span>Pelajari Model</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- STATUS BANNER / MODEL LOAD NOTIFICATION -->
+        <section class="container mb-4">
+            <div class="model-status-strip" id="modelStatusStrip">
+                <div class="status-left">
+                    <div class="status-indicator-circle" id="statusCircle"></div>
+                    <div class="status-text-wrap">
+                        <span class="status-label" id="modelStatusLabel">Memuat model machine learning...</span>
+                        <span class="status-url-sub" id="modelStatusUrl">Menghubungkan ke Google Teachable Machine</span>
+                    </div>
+                </div>
+                <div class="status-right">
+                    <button class="btn-xs" id="btnChangeModelStrip">Ganti URL Model</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN DETECTION SECTION -->
+        <section class="detection-section" id="detection">
+            <div class="container">
+                <div class="detection-grid">
+                    
+                    <!-- LEFT COLUMN: WEBCAM & CAMERA CONTROLS -->
+                    <div class="detection-col left-col">
+                        <div class="card camera-card">
+                            <div class="card-header">
+                                <div class="card-title-group">
+                                    <div class="card-icon-bubble">
+                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                            <circle cx="12" cy="13" r="4"></circle>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h2 class="card-title">Live Webcam</h2>
+                                        <p class="card-subtitle">Arahkan wajah Anda ke tengah lensa kamera</p>
+                                    </div>
+                                </div>
+                                <div class="camera-status-pill" id="cameraStatusBadge">
+                                    <span class="status-dot"></span>
+                                    <span id="cameraStatusText">Kamera Mati</span>
+                                </div>
+                            </div>
+
+                            <!-- Camera Viewport / Container -->
+                            <div class="video-container" id="videoContainer">
+                                
+                                <!-- Video element for getUserMedia -->
+                                <video id="webcamVideo" autoplay playsinline muted></video>
+
+                                <!-- Interactive Scanning Effect Overlay -->
+                                <div class="scan-overlay" id="scanOverlay">
+                                    <div class="scan-line"></div>
+                                    <div class="face-target-box">
+                                        <div class="corner corner-tl"></div>
+                                        <div class="corner corner-tr"></div>
+                                        <div class="corner corner-bl"></div>
+                                        <div class="corner corner-br"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Camera Placeholder (When Camera is stopped) -->
+                                <div class="camera-placeholder" id="cameraPlaceholder">
+                                    <div class="placeholder-icon">
+                                        <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                            <circle cx="12" cy="13" r="4"></circle>
+                                            <line x1="1" y1="1" x2="23" y2="23" stroke="#94a3b8" stroke-width="2"></line>
+                                        </svg>
+                                    </div>
+                                    <h3 class="placeholder-title">Kamera Belum Aktif</h3>
+                                    <p class="placeholder-desc">
+                                        Klik tombol <strong>Mulai Deteksi</strong> untuk membuka webcam dan memulai prediksi ekspresi wajah secara langsung.
+                                    </p>
+                                    <div class="placeholder-privacy-note">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                        </svg>
+                                        <span>Video hanya diproses di browser Anda (100% lokal & privat).</span>
+                                    </div>
+                                </div>
+
+                                <!-- Loading / Permission Waiting Overlay -->
+                                <div class="camera-loading-overlay" id="cameraLoadingOverlay" style="display: none;">
+                                    <div class="spinner"></div>
+                                    <p id="cameraLoadingText">Meminta izin akses kamera webcam...</p>
+                                    <span class="sub-tip">Mohon klik "Izinkan / Allow" pada popup browser</span>
+                                </div>
+                            </div>
+
+                            <!-- Camera Control Buttons -->
+                            <div class="camera-controls">
+                                <button class="btn btn-start" id="btnStartCamera" disabled>
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                    <span>Mulai Deteksi</span>
+                                </button>
+                                <button class="btn btn-stop" id="btnStopCamera" disabled>
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                                    </svg>
+                                    <span>Hentikan Kamera</span>
+                                </button>
+                                <button class="btn btn-icon-only" id="btnFlipCamera" title="Balik Cermin (Mirror Toggle)">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="17 1 21 5 17 9"></polyline>
+                                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                                        <polyline points="7 23 3 19 7 15"></polyline>
+                                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <!-- Camera Error Alert Box -->
+                            <div class="alert-box error" id="cameraAlertBox" style="display: none;">
+                                <div class="alert-icon">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                </div>
+                                <div class="alert-content">
+                                    <strong id="cameraAlertTitle">Izin Kamera Ditolak</strong>
+                                    <p id="cameraAlertMessage">Akses kamera tidak diizinkan atau kamera tidak terdeteksi. Silakan berikan izin di ikon gembok pada address bar browser Anda.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: RESULTS & PROBABILITY BARS -->
+                    <div class="detection-col right-col">
+                        
+                        <!-- MAIN DETECTION RESULT CARD -->
+                        <div class="card result-card" id="mainResultCard">
+                            <div class="card-header border-none pb-0">
+                                <div class="result-card-badge">
+                                    <span class="pulse-ring"></span>
+                                    <span>Hasil Prediksi Utama</span>
+                                </div>
+                                <div class="confidence-tag" id="mainConfidenceBadge">
+                                    <span id="mainConfidenceValue">0%</span>
+                                    <span class="sub-text">Kepercayaan</span>
+                                </div>
+                            </div>
+
+                            <div class="result-body">
+                                <div class="expression-avatar" id="expressionAvatar">
+                                    <span class="avatar-emoji" id="avatarEmoji">👋</span>
+                                </div>
+                                <div class="expression-info">
+                                    <span class="expression-lead-label">Ekspresi Terdeteksi:</span>
+                                    <h3 class="expression-name" id="expressionName">Siap Deteksi</h3>
+                                    <p class="expression-description" id="expressionDesc">
+                                        Tekan tombol "Mulai Deteksi" untuk mengaktifkan kamera dan melihat ekspresi wajah Anda secara real-time.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="result-footer-metrics">
+                                <div class="metric-item">
+                                    <span class="metric-label">Status Model:</span>
+                                    <strong class="metric-val" id="metricModelStatus">Memuat...</strong>
+                                </div>
+                                <div class="metric-divider"></div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Inferensi:</span>
+                                    <strong class="metric-val" id="metricFPS">0 FPS</strong>
+                                </div>
+                                <div class="metric-divider"></div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Target Kelas:</span>
+                                    <strong class="metric-val" id="metricClasses">3 Kategori</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PROBABILITY BARS CARD -->
+                        <div class="card probability-card">
+                            <div class="card-header">
+                                <div class="card-title-group">
+                                    <div class="card-icon-bubble icon-purple">
+                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h2 class="card-title">Indikator Probabilitas</h2>
+                                        <p class="card-subtitle">Nilai prediksi distribusi setiap kategori ekspresi</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="probability-bars-wrapper" id="probabilityBarsWrapper">
+                                
+                                <!-- Category 1: SENANG (HAPPY) -->
+                                <div class="prob-item" id="itemHappy" data-class="happy">
+                                    <div class="prob-header">
+                                        <div class="prob-identity">
+                                            <span class="prob-emoji">😊</span>
+                                            <span class="prob-name">Senang <small>(Happy)</small></span>
+                                        </div>
+                                        <span class="prob-percent" id="percentHappy">0%</span>
+                                    </div>
+                                    <div class="progress-track">
+                                        <div class="progress-fill fill-happy" id="barHappy" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Category 2: SEDIH (SAD) -->
+                                <div class="prob-item" id="itemSad" data-class="sad">
+                                    <div class="prob-header">
+                                        <div class="prob-identity">
+                                            <span class="prob-emoji">😢</span>
+                                            <span class="prob-name">Sedih <small>(Sad)</small></span>
+                                        </div>
+                                        <span class="prob-percent" id="percentSad">0%</span>
+                                    </div>
+                                    <div class="progress-track">
+                                        <div class="progress-fill fill-sad" id="barSad" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Category 3: NETRAL (NEUTRAL) -->
+                                <div class="prob-item" id="itemNeutral" data-class="neutral">
+                                    <div class="prob-header">
+                                        <div class="prob-identity">
+                                            <span class="prob-emoji">😐</span>
+                                            <span class="prob-name">Netral <small>(Neutral)</small></span>
+                                        </div>
+                                        <span class="prob-percent" id="percentNeutral">0%</span>
+                                    </div>
+                                    <div class="progress-track">
+                                        <div class="progress-fill fill-neutral" id="barNeutral" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Dynamic Extra Classes Container (if model has custom classes) -->
+                                <div id="extraClassesContainer" class="extra-classes-container"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PRIVACY ASSURANCE SECTION -->
+        <section class="privacy-section">
+            <div class="container">
+                <div class="privacy-card">
+                    <div class="privacy-icon">
+                        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                    </div>
+                    <div class="privacy-text">
+                        <h3>Keamanan & Privasi 100% Terjaga</h3>
+                        <p>
+                            Aplikasi ini memproses seluruh frame video webcam secara <strong>lokal di dalam browser Anda</strong> menggunakan WebGL dan akselerasi hardware client-side. Gambar atau rekaman wajah Anda <strong>tidak pernah dikirim atau disimpan</strong> ke server mana pun.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABOUT APPLICATION & GUIDE SECTION -->
+        <section class="about-section" id="about">
+            <div class="container">
+                <div class="section-header text-center">
+                    <div class="section-tag">Arsitektur & Teknologi</div>
+                    <h2 class="section-title">Tentang Aplikasi & Model AI</h2>
+                    <p class="section-desc">
+                        Aplikasi deteksi ekspresi wajah ini memadukan kemudahan Google Teachable Machine dengan kecanggihan TensorFlow.js untuk menghadirkan inferensi machine learning langsung di browser.
+                    </p>
+                </div>
+
+                <div class="about-grid">
+                    <!-- Feature Card 1 -->
+                    <div class="card about-card">
+                        <div class="about-icon bg-blue-subtle">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                                <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                            </svg>
+                        </div>
+                        <h3 class="about-card-title">Google Teachable Machine</h3>
+                        <p class="about-card-desc">
+                            Platform web berbasis transfer learning dari MobileNet yang memungkinkan siapa saja melatih model machine learning klasifikasi gambar tanpa perlu menulis kode matematika yang rumit.
+                        </p>
+                    </div>
+
+                    <!-- Feature Card 2 -->
+                    <div class="card about-card">
+                        <div class="about-icon bg-purple-subtle">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                                <polyline points="2 17 12 22 22 17"></polyline>
+                                <polyline points="2 12 12 17 22 12"></polyline>
+                            </svg>
+                        </div>
+                        <h3 class="about-card-title">TensorFlow.js Engine</h3>
+                        <p class="about-card-desc">
+                            Library open-source untuk menjalankan model neural network di browser menggunakan JavaScript dan akselerasi WebGL, memberikan performa deteksi real-time bebas latency jaringan.
+                        </p>
+                    </div>
+
+                    <!-- Feature Card 3 -->
+                    <div class="card about-card">
+                        <div class="about-icon bg-indigo-subtle">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </div>
+                        <h3 class="about-card-title">Panduan Model Kustom</h3>
+                        <p class="about-card-desc">
+                            Ingin menggunakan model Anda sendiri? Latih 3 kelas (Senang, Sedih, Netral) di Teachable Machine, klik <em>Export -> Upload</em>, lalu masukkan link shareable Anda ke aplikasi ini.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Tutorial Steps Card -->
+                <div class="card steps-card mt-4">
+                    <h3 class="steps-title">Langkah Melatih Model Sendiri di Google Teachable Machine</h3>
+                    <div class="steps-timeline">
+                        <div class="step-item">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>Buka Teachable Machine</h4>
+                                <p>Kunjungi <a href="https://teachablemachine.withgoogle.com/" target="_blank" rel="noopener">teachablemachine.withgoogle.com</a> dan pilih <strong>Image Project -> Standard Image Model</strong>.</p>
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>Buat 3 Kelas Ekspresi</h4>
+                                <p>Beri nama kelas: <code>Senang</code> (atau <code>Happy</code>), <code>Sedih</code> (atau <code>Sad</code>), dan <code>Netral</code> (atau <code>Neutral</code>). Rekam sampel wajah menggunakan webcam untuk setiap kelas (masing-masing 80-150 gambar).</p>
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>Latih Model (Train)</h4>
+                                <p>Klik tombol <strong>Train Model</strong> dan tunggu hingga proses pelatihan selesai di browser Anda tanpa menutup tab.</p>
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h4>Export & Salin Link Model</h4>
+                                <p>Klik <strong>Export Model</strong>, pilih tab <strong>TensorFlow.js</strong>, pilih opsi <strong>Upload (shareable link)</strong>, lalu salin URL yang dihasilkan (misal: <code>https://teachablemachine.withgoogle.com/models/xyz123/</code>).</p>
+                            </div>
+                        </div>
+
+                        <div class="step-item">
+                            <div class="step-number">5</div>
+                            <div class="step-content">
+                                <h4>Gunakan di Website Ini</h4>
+                                <p>Klik tombol <strong>Pengaturan Model</strong> di pojok kanan atas website ini, tempelkan URL Anda, lalu klik <strong>Terapkan Model</strong>. Selesai!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="footer-left">
+                <span class="footer-brand">Face Expression Detector</span>
+                <p>Website deteksi ekspresi wajah real-time berbasis Machine Learning & TensorFlow.js.</p>
+            </div>
+            <div class="footer-right">
+                <p>&copy; 2026 Face Expression AI. Menggunakan Google Teachable Machine.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL PENGATURAN MODEL TEACHABLE MACHINE -->
+    <div class="modal-backdrop" id="configModal" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="modal-title">Konfigurasi Model AI</h3>
+                        <p class="modal-subtitle">Ganti URL model Google Teachable Machine milik Anda</p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" id="btnCloseConfigModal" title="Tutup Modal">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="inputModelUrl" class="form-label">
+                        URL Model Teachable Machine:
+                    </label>
+                    <input 
+                        type="url" 
+                        id="inputModelUrl" 
+                        class="form-input" 
+                        placeholder="https://teachablemachine.withgoogle.com/models/ID_MODEL_ANDA/"
+                        autocomplete="off"
+                        spellcheck="false"
+                    >
+                    <span class="form-help">
+                        Contoh: <code>https://teachablemachine.withgoogle.com/models/N5m9CVnZz/</code> (Pastikan diakhiri dengan garis miring <code>/</code>)
+                    </span>
+                </div>
+
+                <div class="modal-alert" id="modalAlertBox" style="display: none;"></div>
+
+                <div class="model-info-preview" id="modelInfoPreview">
+                    <div class="info-row">
+                        <span class="info-k">Status:</span>
+                        <span class="info-v" id="previewStatus">Belum diverifikasi</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-k">Kelas Terdeteksi:</span>
+                        <span class="info-v" id="previewClasses">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btnResetDefaultModel">Reset ke Default</button>
+                <div class="modal-footer-actions">
+                    <button class="btn btn-outline" id="btnCancelConfigModal">Batal</button>
+                    <button class="btn btn-primary" id="btnApplyModel">Terapkan Model</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Logic -->
+    <script src="script.js"></script>
+</body>
+</html>
